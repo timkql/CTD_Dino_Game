@@ -75,3 +75,4 @@ start_game(character)
 
 #testing, ignore
 output_text_testing(generate_map_block())
+#TEST_COMMIT
