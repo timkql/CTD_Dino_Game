@@ -32,7 +32,7 @@ def add_score_to_db(username: str, date: str, score: int):
 class Character:
     sprite = '''
      .----.   @   @
-   / .-"-.`.  \v/
+   / .-"-.`.  \_/
    | | '\ \ \_/ )
  ,-\ `-.' /.'  /
 '---`----'----'  
@@ -46,10 +46,11 @@ class Character:
         self.date_created = datetime.now()
         return
 
-
 # TODO: Function to generate map blocks programatically about 200 characters wide
 # with constraint that character will always be able to survive (e.g. nothing above jump height,
 # map blocks must not create unclearable obstacles after combining)
+
+
 def generate_map_block():
     """Function to generate map blocks programatically"""
     pass
