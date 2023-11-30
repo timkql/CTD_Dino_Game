@@ -1,11 +1,9 @@
 import sqlite3
 from datetime import datetime
-
+import random
 JUMP_HEIGHT = 6
 
 # Database
-
-
 def setup_database():
     """Setup score history database"""
 
@@ -52,8 +50,31 @@ class Character:
 
 
 def generate_map_block():
-    """Function to generate map blocks programatically"""
-    pass
+    # using 0 for clear space 1 for obstacle
+    HEIGHT = 20
+    WIDTH = 200
+    map_block = []
+    # Predefined map objects (with front and back spacing)
+    cactus_small = [[0 for i in range(HEIGHT)] for j in range(4)]+[[0 if i>2 else 1 for i in range(HEIGHT)] for j in range(4)]+[[0 for i in range(HEIGHT)] for j in range(2)]
+    cactus_tall = [[0 for i in range(HEIGHT)] for j in range(5)]+[[0 if i>4 else 1 for i in range(HEIGHT)] for j in range(2)]+[[0 for i in range(HEIGHT)] for j in range(3)]
+    cactus_wide = [[0 for i in range(HEIGHT)] for j in range(5)]+[[0 if i>1 else 1 for i in range(HEIGHT)] for j in range(8)]+[[0 for i in range(HEIGHT)] for j in range(4)]
+    bird = [[0 for i in range(HEIGHT)] for j in range(5)]+[[0 if i<(HEIGHT-6) or i>(HEIGHT-5) else 1 for i in range(HEIGHT)] for j in range(3)]+[[0 for i in range(HEIGHT)] for j in range(2)]
+    obstacles  = [cactus_small,cactus_tall,cactus_wide,bird]
+    
+    while(1):
+        obs = random.choice(obstacles)
+        if(len(map_block)+len(obs)>WIDTH):
+            map_block.extend([[0 for i in range(HEIGHT)]for j in range(WIDTH-len(map_block))])
+            break
+        else:
+            map_block.extend(obs)
+    return map_block
+
+def output_text_testing(text_list):
+    print(len(text_list))    
+    print(len(text_list[0]))
+    for i in range(len(text_list[0])-1,-1,-1):
+        print(''.join(["\u2588" if j==1 else " " for j in [t[i] for t in text_list]]))
 
 # TODO: Prompts player to start by keying in username
 
@@ -75,3 +96,8 @@ def start_game(character: Character):
 setup_database()
 character = player_setup()
 start_game(character)
+
+
+#testing, ignore
+output_text_testing(generate_map_block())
+#TEST_COMMIT
