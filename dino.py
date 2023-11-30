@@ -1,7 +1,12 @@
 import sqlite3
 from datetime import datetime
 import random
+import time
+import curses
+
 JUMP_HEIGHT = 6
+MAP_HEIGHT = 20
+MAP_WIDTH = 200
 
 # Database
 def setup_database():
@@ -15,19 +20,18 @@ def setup_database():
         cur.execute("CREATE TABLE score_history(username, date, score)")
 
 
-def add_score_to_db(username: str, date: str, score: int):
+def add_score_to_db(username: str, date: datetime, score: int):
     """Add player score data to database"""
+
     con = sqlite3.connect("dino.db")
     cur = con.cursor()
     cur.execute(
-        f"INSERT INTO score_history (username, date, score) VALUES ('{username}', {date}, {score})")
+        f"INSERT INTO score_history (username, date, score) VALUES ('{username}', '{date}', {score})")
 
 
-# TODO: Character Class
-# fields: username, date_created, score, sprite fields
-# date_created should be automatically set when class instance is created
-# sprite should be pre-set for simplicity (something simple 3 characters wide or around there)
 class Character:
+    """Character Class"""
+
     sprite = '''
      .----.   @   @
    / .-"-.`.  \_/
@@ -44,20 +48,20 @@ class Character:
         self.date_created = datetime.now()
         return
 
-# TODO: Function to generate map blocks programatically about 200 characters wide
-# with constraint that character will always be able to survive (e.g. nothing above jump height,
-# map blocks must not create unclearable obstacles after combining)
 
+def generate_map_block(width):
+    """Function to generate map blocks programatically about 200 characters wide 
+    with constraint that character will always be able to survive (e.g. nothing above jump height, 
+    map blocks must not create unclearable obstacles after combining)"""
 
-def generate_map_block():
     # using 0 for clear space 1 for obstacle
-    HEIGHT = 20
-    WIDTH = 200
+    HEIGHT = MAP_HEIGHT
+    WIDTH = width
     map_block = []
     # Predefined map objects (with front and back spacing)
-    cactus_small = [[0 for i in range(HEIGHT)] for j in range(4)]+[[0 if i>2 else 1 for i in range(HEIGHT)] for j in range(4)]+[[0 for i in range(HEIGHT)] for j in range(2)]
-    cactus_tall = [[0 for i in range(HEIGHT)] for j in range(5)]+[[0 if i>4 else 1 for i in range(HEIGHT)] for j in range(2)]+[[0 for i in range(HEIGHT)] for j in range(3)]
-    cactus_wide = [[0 for i in range(HEIGHT)] for j in range(5)]+[[0 if i>1 else 1 for i in range(HEIGHT)] for j in range(8)]+[[0 for i in range(HEIGHT)] for j in range(4)]
+    cactus_small = [[0 for i in range(HEIGHT)] for j in range(26)]+[[0 if i>2 else 1 for i in range(HEIGHT)] for j in range(4)]+[[0 for i in range(HEIGHT)] for j in range(18)]
+    cactus_tall = [[0 for i in range(HEIGHT)] for j in range(30)]+[[0 if i>4 else 1 for i in range(HEIGHT)] for j in range(2)]+[[0 for i in range(HEIGHT)] for j in range(22)]
+    cactus_wide = [[0 for i in range(HEIGHT)] for j in range(30)]+[[0 if i>1 else 1 for i in range(HEIGHT)] for j in range(8)]+[[0 for i in range(HEIGHT)] for j in range(26)]
     bird = [[0 for i in range(HEIGHT)] for j in range(5)]+[[0 if i<(HEIGHT-6) or i>(HEIGHT-5) else 1 for i in range(HEIGHT)] for j in range(3)]+[[0 for i in range(HEIGHT)] for j in range(2)]
     obstacles  = [cactus_small,cactus_tall,cactus_wide,bird]
     
@@ -70,34 +74,57 @@ def generate_map_block():
             map_block.extend(obs)
     return map_block
 
-def output_text_testing(text_list):
-    print(len(text_list))    
-    print(len(text_list[0]))
-    for i in range(len(text_list[0])-1,-1,-1):
-        print(''.join(["\u2588" if j==1 else " " for j in [t[i] for t in text_list]]))
-
-# TODO: Prompts player to start by keying in username
+# def output_text_testing(text_list):
+#     print(len(text_list))    
+#     print(len(text_list[0]))
+#     for i in range(len(text_list[0])-1,-1,-1):
+#         print(''.join(["\u2588" if j==1 else " " for j in [t[i] for t in text_list]]))
+    
 
 
 def player_setup():
-    """Setup a Character object"""
-    username = input("Enter your username to kick things off:")
-    return Character()
-
-# TODO: Game Engine that handles game operation, score calculation, player death
+    """Setup a Character object. Prompts player to start by keying in username"""
+    
+    username = input("Enter your username to kick things off: ")
+    return Character(username)
 
 
 def start_game(character: Character):
-    """Game Engine"""
-    pass
+    """Game Engine that handles game operation, score calculation, player death"""
+    console = curses.initscr()
+    step, score, delay = 0, 0, 0.02
+    map_block = generate_map_block(MAP_WIDTH*2)
+    while True:
+        # Generate next map block
+        if(step == MAP_WIDTH):
+                map_block = map_block[step:int(len(map_block)/2)+step] + generate_map_block(MAP_WIDTH)
+                step = 0
+                # Speed increases for each new map block until max speed
+                if (delay > 0.005):
+                    delay *= 0.95
+        output_map_block = map_block[step:int(len(map_block)/2)+step]
 
+        # Output map row by row
+        console.clear()
+        for i in range(len(output_map_block[0]) - 5, -1, -1):
+            row = "".join(["\u2588" if j==1 else " " for j in [t[i] for t in output_map_block]])
+            console.addstr(15-i, 0, row)
+        console.refresh()
+        
+        step += 1
+        score += 1
+        time.sleep(delay)  
+    
+    character.score = score
+    add_score_to_db(character.username, datetime.now(), score)
+    console.clear()
+    console.addstr(0, 0, "FINAL SCORE: " + str(score))
+    console.refresh()
 
-# Main program
+    
+if __name__ == '__start_game__':
+    curses.wrapper(start_game)
+
 setup_database()
 character = player_setup()
 start_game(character)
-
-
-#testing, ignore
-output_text_testing(generate_map_block())
-#TEST_COMMIT
