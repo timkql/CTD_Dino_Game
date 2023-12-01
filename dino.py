@@ -3,6 +3,7 @@ from datetime import datetime
 import random
 import time
 import curses
+import os
 
 JUMP_HEIGHT = 6
 MAP_HEIGHT = 20
@@ -89,9 +90,19 @@ def player_setup():
     return Character(username)
 
 
-def start_game(character: Character):
+def start_game():
     """Game Engine that handles game operation, score calculation, player death"""
+
+    setup_database()
+    character = player_setup()
+    # character = Character("Timbo")
+
+    # Start curses application
     console = curses.initscr()
+    curses.noecho()
+    curses.cbreak()
+    console.keypad(True)
+
     step, score, delay = 0, 0, 0.02
     map_block = generate_map_block(MAP_WIDTH*2)
     while True:
@@ -114,17 +125,23 @@ def start_game(character: Character):
         step += 1
         score += 1
         time.sleep(delay)  
+
+        if step == 100:
+            break
     
     character.score = score
     add_score_to_db(character.username, datetime.now(), score)
     console.clear()
     console.addstr(0, 0, "FINAL SCORE: " + str(score))
     console.refresh()
+    time.sleep(10)
 
-    
-if __name__ == '__start_game__':
-    curses.wrapper(start_game)
 
-setup_database()
-character = player_setup()
-start_game(character)
+    # Terminate curses application
+    curses.nocbreak()
+    console.keypad(False)
+    curses.echo()
+    curses.endwin()
+
+
+start_game()
