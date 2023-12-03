@@ -9,26 +9,80 @@ JUMP_HEIGHT = 6
 MAP_HEIGHT = 20
 MAP_WIDTH = 200
 
-# Database
+# Database Functions
 def setup_database():
     """Setup score history database"""
 
     con = sqlite3.connect("dino.db")
     cur = con.cursor()
     res = cur.execute(
-        "SELECT name FROM sqlite_master WHERE name='score_history'")
+        f"SELECT name FROM sqlite_master WHERE name='score_history'")
     if (res.fetchone() is None):
         cur.execute("CREATE TABLE score_history(username, date, score)")
-
-
-def add_score_to_db(username: str, date: datetime, score: int):
+    cur.close()
+    con.close()
+    
+def add_new_record_to_db(username: str, date: datetime, score: int):
     """Add player score data to database"""
 
     con = sqlite3.connect("dino.db")
     cur = con.cursor()
     cur.execute(
-        f"INSERT INTO score_history (username, date, score) VALUES ('{username}', '{date}', {score})")
+        f"INSERT INTO score_history (username, date, score) VALUES (?, ?, ?)", (username, date, score))
+    con.commit()
+    cur.close()
+    con.close()
+    
+def get_record_for_username(username: str):
+    """Get score for username"""
 
+    con = sqlite3.connect("dino.db")
+    cur = con.cursor()
+    cur.execute(f"SELECT * FROM score_history WHERE username='{username}'")
+    row = cur.fetchone()
+    cur.close()
+    con.close()
+    if row:
+        return Record(row[0], row[1], row[2])
+    else:  
+        return Record("", "", 0)
+    
+    
+def update_score_for_username(username: str, score: int):
+    """Update a row's score by username"""
+
+    con = sqlite3.connect("dino.db")
+    cur = con.cursor()
+    cur.execute(f"UPDATE score_history SET score={score} WHERE username='{username}'")
+    con.commit()
+    cur.close()
+    con.close()
+    
+def get_highest_score_record_for_device():
+    """Get data for highest score on device"""
+
+    con = sqlite3.connect("dino.db")
+    cur = con.cursor()
+    cur.execute(f"SELECT * FROM score_history ORDER BY score DESC LIMIT 1;")
+    row = cur.fetchone()
+    cur.close()
+    con.close()
+    if row:
+        return Record(row[0], row[1], row[2])
+    else:  
+        return Record("", "", 0)
+    
+# Class Definitions
+class Record:
+    """Record Class"""
+    username: str
+    date: datetime
+    score: int
+
+    def __init__(self, username, date, score):
+        self.username = username
+        self.date = date
+        self.score = score
 
 class Character:
     """Character Class"""
@@ -102,10 +156,20 @@ def start_game():
     curses.noecho()
     curses.cbreak()
     console.keypad(True)
+    # Set getch() to be non blocking and return -1 when no input
+    console.nodelay(True)
 
     step, score, delay = 0, 0, 0.02
     map_block = generate_map_block(MAP_WIDTH*2)
     while True:
+        keyPress = console.getch()
+        # Jump if user presses spacebar
+        if keyPress == ord(" "):
+            # TODO: John do what u must
+            pass
+        if keyPress == ord("k"):
+            break
+
         # Generate next map block
         if(step == MAP_WIDTH):
                 map_block = map_block[step:int(len(map_block)/2)+step] + generate_map_block(MAP_WIDTH)
@@ -126,22 +190,36 @@ def start_game():
         score += 1
         time.sleep(delay)  
 
-        if step == 100:
-            break
-    
-    character.score = score
-    add_score_to_db(character.username, datetime.now(), score)
-    console.clear()
-    console.addstr(0, 0, "FINAL SCORE: " + str(score))
-    console.refresh()
-    time.sleep(10)
-
-
     # Terminate curses application
+    console.clear()
+    console.refresh()
+
     curses.nocbreak()
     console.keypad(False)
     curses.echo()
     curses.endwin()
+    
+    # Endgame
+    character.score = score
+    user_record: Record = get_record_for_username(character.username)
+    # If user has no record in DB
+    if user_record.username == "":
+        add_new_record_to_db(character.username, datetime.now(), score)
+    device_highest_record: Record = get_highest_score_record_for_device()
 
+    # Display Score
+    print("\n")
+    display_text = ""
+    if user_record.score < score:
+        display_text += f"YOUR NEW HIGH SCORE: {str(score)} - - - "
+        update_score_for_username(character.username, score)
+    else:
+        display_text += f"YOUR SCORE: {str(score)} YOUR HIGHEST SCORE: {user_record.score} - - - "
+
+    if device_highest_record.score >= score:
+        display_text += f"HIGHEST SCORE ON DEVICE: {str(device_highest_record.score)} BY {device_highest_record.username} ON {device_highest_record.date}"
+    else: 
+        display_text += f"NEW HIGHEST SCORE ON DEVICE: {str(character.score)} by {character.username} on {character.date_created}"
+    print(display_text)
 
 start_game()
