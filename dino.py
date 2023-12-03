@@ -5,8 +5,8 @@ import time
 import curses
 import os
 
-JUMP_SPEED = 1
-FALL_SPEED = -0.8
+JUMP_SPEED = 0.5
+FALL_SPEED = -0.4
 JUMP_HEIGHT = 8
 MAP_HEIGHT = 20
 MAP_WIDTH = 200
@@ -277,7 +277,7 @@ def start_game():
         display_text += f"YOUR NEW HIGH SCORE: {str(score)} - - - "
         update_score_for_username(character.username, score)
     else:
-        display_text += f"YOUR SCORE: {str(score)} YOUR HIGHEST SCORE: {user_record.score} - - - "
+        display_text += f"YOUR SCORE: {str(score)} - - - YOUR HIGHEST SCORE: {user_record.score} - - - "
 
     if device_highest_record.score >= score:
         display_text += f"HIGHEST SCORE ON DEVICE: {str(device_highest_record.score)} BY {device_highest_record.username} ON {device_highest_record.date}"
