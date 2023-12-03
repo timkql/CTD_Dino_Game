@@ -5,7 +5,7 @@ import time
 import curses
 import os
 
-JUMP_SPEED = 6
+JUMP_SPEED = 4
 MAP_HEIGHT = 20
 MAP_WIDTH = 200
 
@@ -92,17 +92,18 @@ class Character:
    / .-"-.`.  \_/  
    | | '\ \ \_/ )  
  ,-\ `-.' /.'  /   
-'---`----'----'      
-    '''
+'---`----'----'    '''
     score = 0
     username = ''
     date_created = None
     y_pos = 0
     y_vel = 0
     left_offset = 3
+    sprite_list = []
     def __init__(self, username):
         self.username = username
         self.date_created = datetime.now()
+        self.sprite_list = [list(a) for a in self.sprite.split('\n')[1::]][::-1]
         return
     def jump(self):
         if(self.y_vel!=0 or self.y_pos !=0):
@@ -111,18 +112,18 @@ class Character:
         return
     
     def update_y_pos(self):
-        if(self.y_vel>0 or self.y_pos>0):
+        if(self.y_vel!=0 or self.y_pos>0):
             self.y_pos += self.y_vel
             if(self.y_pos<=0):
                 self.y_pos=0
                 self.y_vel=0
             else:
-                self.y_vel -= 2
+                self.y_vel -= 1
         return
     
     def check_coll(self, cur_map_block):
         # References the bottom left of the sprite, draws a 19x5 square and check collision
-        check_area = [j[self.y_pos:self.y_pos+5] for j in cur_map_block[self.left_offset:self.left_offset+19]] #slice the 2d map
+        check_area = [j[self.y_pos:self.y_pos+len(self.sprite_list)] for j in cur_map_block[self.left_offset:self.left_offset+len(self.sprite_list[0])]] #slice the 2d map
         for k in check_area:
             for l in k:
                if(l==1):
@@ -135,13 +136,11 @@ class Character:
             row = ["\u2588" if j==1 else " " for j in [t[i] for t in cur_map_block]]
             output_char_list.append(row)
         output_char_list.reverse()
-        sprite_list = [list(a) for a in self.sprite.split('\n')[1:]]
-        print(sprite_list)
-        for k in range(5):
-            for j in range(19):
-                output_char_list[k+self.y_pos][j+self.left_offset] = sprite_list[k][j]
-                print(f'j{j}k{k}')
-        print(output_char_list)
+        for k in range(len(self.sprite_list)):
+            for j in range(len(self.sprite_list[0])):
+                output_char_list[k+self.y_pos][j+self.left_offset] = self.sprite_list[k][j]
+                # print(f'j{j}k{k}')
+        # print(output_char_list)
         return output_char_list
 
 
@@ -160,7 +159,7 @@ def generate_map_block(width):
     cactus_wide = [[0 for i in range(HEIGHT)] for j in range(30)]+[[0 if i>1 else 1 for i in range(HEIGHT)] for j in range(8)]+[[0 for i in range(HEIGHT)] for j in range(26)]
     bird = [[0 for i in range(HEIGHT)] for j in range(5)]+[[0 if i<(HEIGHT-6) or i>(HEIGHT-5) else 1 for i in range(HEIGHT)] for j in range(3)]+[[0 for i in range(HEIGHT)] for j in range(2)]
     obstacles  = [cactus_small,cactus_tall,cactus_wide,bird]
-    
+    # obstacles = [[[0 for i in range(HEIGHT)] for j in range(26)]]
     while(1):
         obs = random.choice(obstacles)
         if(len(map_block)+len(obs)>WIDTH):
@@ -208,6 +207,7 @@ def start_game():
         if keyPress == ord(" "):
             # TODO: John do what u must
             character.jump()
+            print("jumped")
             pass
         if keyPress == ord("k"):
             break
@@ -231,13 +231,14 @@ def start_game():
         '''
         # check for death
         dead = character.check_coll(output_map_block)
+        character.update_y_pos()
         if(dead):
             #TODO: die screen
             break
         # draw screen
         out_screen = character.ret_screen(output_map_block)
         for i in range(len(out_screen) - 5, -1, -1):
-            print(i)
+            # print(i)
             row = ''.join(out_screen[i])
             console.addstr(15-i, 0, row)
         
