@@ -5,7 +5,9 @@ import time
 import curses
 import os
 
-JUMP_SPEED = 4
+JUMP_SPEED = 1
+FALL_SPEED = -0.8
+JUMP_HEIGHT = 8
 MAP_HEIGHT = 20
 MAP_WIDTH = 200
 
@@ -98,7 +100,7 @@ class Character:
     date_created = None
     y_pos = 0
     y_vel = 0
-    left_offset = 3
+    left_offset = 5 # Left side offset from screen
     sprite_list = []
     def __init__(self, username):
         self.username = username
@@ -113,34 +115,38 @@ class Character:
     
     def update_y_pos(self):
         if(self.y_vel!=0 or self.y_pos>0):
-            self.y_pos += self.y_vel
-            if(self.y_pos<=0):
+            self.y_pos += self.y_vel # Update position based on v
+            if(self.y_pos<=0): # Below floor, set v to 0
                 self.y_pos=0
                 self.y_vel=0
             else:
-                self.y_vel -= 1
+                if(self.y_pos>= JUMP_HEIGHT): # Hit max jump height
+                    self.y_vel = FALL_SPEED
+                    
         return
     
     def check_coll(self, cur_map_block):
-        # References the bottom left of the sprite, draws a 19x5 square and check collision
-        check_area = [j[self.y_pos:self.y_pos+len(self.sprite_list)] for j in cur_map_block[self.left_offset:self.left_offset+len(self.sprite_list[0])]] #slice the 2d map
+        # References the bottom left of the sprite, slices 19x5 square and check collision
+        y_pos_int = int(round(self.y_pos))
+        check_area = [j[y_pos_int:y_pos_int+len(self.sprite_list)] for j in cur_map_block[self.left_offset:self.left_offset+len(self.sprite_list[0])]] #slice the 2d map
         for k in check_area:
             for l in k:
                if(l==1):
                    return True # collided with object
         return False
     
+    # return list of characters for screen rendering
     def ret_screen(self, cur_map_block):
         output_char_list = []
         for i in range(len(cur_map_block[0]) - 5, -1, -1):
             row = ["\u2588" if j==1 else " " for j in [t[i] for t in cur_map_block]]
             output_char_list.append(row)
         output_char_list.reverse()
+        y_pos_int = int(round(self.y_pos))
+        # Draw sprite onto the list
         for k in range(len(self.sprite_list)):
             for j in range(len(self.sprite_list[0])):
-                output_char_list[k+self.y_pos][j+self.left_offset] = self.sprite_list[k][j]
-                # print(f'j{j}k{k}')
-        # print(output_char_list)
+                output_char_list[k+y_pos_int][j+self.left_offset] = self.sprite_list[k][j]
         return output_char_list
 
 
@@ -199,7 +205,7 @@ def start_game():
     # Set getch() to be non blocking and return -1 when no input
     console.nodelay(True)
 
-    step, score, delay = 0, 0, 0.02
+    step, score, delay = 0, 0, 0.06
     map_block = generate_map_block(MAP_WIDTH*2)
     while True:
         keyPress = console.getch()
@@ -207,7 +213,6 @@ def start_game():
         if keyPress == ord(" "):
             # TODO: John do what u must
             character.jump()
-            print("jumped")
             pass
         if keyPress == ord("k"):
             break
