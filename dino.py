@@ -5,9 +5,12 @@ import time
 import curses
 import os
 
-JUMP_HEIGHT = 6
+JUMP_SPEED = 0.5
+FALL_SPEED = -0.4
+JUMP_HEIGHT = 8
 MAP_HEIGHT = 20
 MAP_WIDTH = 200
+LEFT_OFFSET = 5
 
 # Database Functions
 def setup_database():
@@ -88,20 +91,65 @@ class Character:
     """Character Class"""
 
     sprite = '''
-     .----.   @   @
-   / .-"-.`.  \_/
-   | | '\ \ \_/ )
- ,-\ `-.' /.'  /
-'---`----'----'  
-    '''
+   __   
+  (__\_ 
+-{{_(|8)
+   (__/ '''
     score = 0
     username = ''
     date_created = None
-
+    y_pos = 0
+    y_vel = 0
+    game_speed = 22
+    sprite_list = []
     def __init__(self, username):
         self.username = username
         self.date_created = datetime.now()
+        self.sprite_list = [list(a) for a in self.sprite.split('\n')[1::]][::-1]
         return
+    def jump(self):
+        """Starts a jump by setting vertical velocity"""
+        if(self.y_vel!=0 or self.y_pos !=0):    #Check if already jumping
+            return
+        self.y_vel = JUMP_SPEED
+        return
+    
+    def update_y_pos(self):
+        """Performs physics calculations to find the new vertical position of the sprite"""
+        if(self.y_vel!=0 or self.y_pos>0):
+            self.y_pos += self.y_vel # Update position based on v
+            if(self.y_pos<=0): # Below floor, set v to 0
+                self.y_pos=0
+                self.y_vel=0
+            else:
+                if(self.y_pos>= JUMP_HEIGHT): # Hit max jump height
+                    self.y_vel = FALL_SPEED
+                    
+        return
+    
+    def check_coll(self, cur_map_block):
+        """References the bottom left of the sprite, slices rectangle of size of sprite and check collision"""
+        y_pos_int = int(round(self.y_pos))
+        check_area = [j[y_pos_int:y_pos_int+len(self.sprite_list)] for j in cur_map_block[LEFT_OFFSET:LEFT_OFFSET+len(self.sprite_list[0])]] #slice the 2d map
+        for k in check_area:
+            for l in k:
+               if(l==1):
+                   return True # collided with object
+        return False
+    
+    def ret_screen(self, cur_map_block):
+        """Returns a 2D List of text characters to be rendered on-screen"""
+        output_char_list = []
+        for i in range(len(cur_map_block[0]) - 5, -1, -1):
+            row = ["\u2588" if j==1 else " " for j in [t[i] for t in cur_map_block]]
+            output_char_list.append(row)
+        output_char_list.reverse()
+        y_pos_int = int(round(self.y_pos))
+        # Draw sprite onto the list
+        for k in range(len(self.sprite_list)):
+            for j in range(len(self.sprite_list[0])):
+                output_char_list[k+y_pos_int][j+LEFT_OFFSET] = self.sprite_list[k][j]
+        return output_char_list
 
 
 def generate_map_block(width):
@@ -114,13 +162,13 @@ def generate_map_block(width):
     WIDTH = width
     map_block = []
     # Predefined map objects (with front and back spacing)
-    cactus_small = [[0 for i in range(HEIGHT)] for j in range(26)]+[[0 if i>2 else 1 for i in range(HEIGHT)] for j in range(4)]+[[0 for i in range(HEIGHT)] for j in range(18)]
-    cactus_tall = [[0 for i in range(HEIGHT)] for j in range(30)]+[[0 if i>4 else 1 for i in range(HEIGHT)] for j in range(2)]+[[0 for i in range(HEIGHT)] for j in range(22)]
-    cactus_wide = [[0 for i in range(HEIGHT)] for j in range(30)]+[[0 if i>1 else 1 for i in range(HEIGHT)] for j in range(8)]+[[0 for i in range(HEIGHT)] for j in range(26)]
-    bird = [[0 for i in range(HEIGHT)] for j in range(5)]+[[0 if i<(HEIGHT-6) or i>(HEIGHT-5) else 1 for i in range(HEIGHT)] for j in range(3)]+[[0 for i in range(HEIGHT)] for j in range(2)]
+    cactus_small = [[0 for i in range(HEIGHT)] for j in range(30)]+[[0 if i>2 else 1 for i in range(HEIGHT)] for j in range(4)]
+    cactus_tall = [[0 for i in range(HEIGHT)] for j in range(38)]+[[0 if i>4 else 1 for i in range(HEIGHT)] for j in range(2)]
+    cactus_wide = [[0 for i in range(HEIGHT)] for j in range(42)]+[[0 if i>1 else 1 for i in range(HEIGHT)] for j in range(8)]
+    bird = [[0 for i in range(HEIGHT)] for j in range(5)]+[[0 if i<(HEIGHT-8) else 1 for i in range(HEIGHT)] for j in range(3)]
     obstacles  = [cactus_small,cactus_tall,cactus_wide,bird]
-    
-    while(1):
+    # Randomly add map objects until the map width is reached
+    while(True):
         obs = random.choice(obstacles)
         if(len(map_block)+len(obs)>WIDTH):
             map_block.extend([[0 for i in range(HEIGHT)]for j in range(WIDTH-len(map_block))])
@@ -149,77 +197,94 @@ def start_game():
 
     setup_database()
     character = player_setup()
-    # character = Character("Timbo")
+    playing = True
+    while playing:
+        # Start curses application
+        console = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+        console.keypad(True)
+        # Set getch() to be non blocking and return -1 when no input
+        console.nodelay(True)
 
-    # Start curses application
-    console = curses.initscr()
-    curses.noecho()
-    curses.cbreak()
-    console.keypad(True)
-    # Set getch() to be non blocking and return -1 when no input
-    console.nodelay(True)
+        step, score, delay = 0, 0, (1.0/character.game_speed)
+        map_block = generate_map_block(MAP_WIDTH*2)
+        while True:
+            keyPress = console.getch()
+            # Jump if user presses spacebar
+            if keyPress == ord(" "):
+                character.jump()
+            if keyPress == ord("k"):
+                break
 
-    step, score, delay = 0, 0, 0.02
-    map_block = generate_map_block(MAP_WIDTH*2)
-    while True:
-        keyPress = console.getch()
-        # Jump if user presses spacebar
-        if keyPress == ord(" "):
-            # TODO: John do what u must
-            pass
-        if keyPress == ord("k"):
-            break
+            # Generate next map block
+            if(step == MAP_WIDTH):
+                    map_block = map_block[step:int(len(map_block)/2)+step] + generate_map_block(MAP_WIDTH)
+                    step = 0
+                    # Speed increases for each new map block until max speed
+                    if (delay > 0.005):
+                        delay *= 0.9
+            output_map_block = map_block[step:int(len(map_block)/2)+step]
 
-        # Generate next map block
-        if(step == MAP_WIDTH):
-                map_block = map_block[step:int(len(map_block)/2)+step] + generate_map_block(MAP_WIDTH)
-                step = 0
-                # Speed increases for each new map block until max speed
-                if (delay > 0.005):
-                    delay *= 0.95
-        output_map_block = map_block[step:int(len(map_block)/2)+step]
+            # Output map row by row
+            
+            console.clear()
+            '''
+            for i in range(len(output_map_block[0]) - 5, -1, -1):
+                row = "".join(["\u2588" if j==1 else " " for j in [t[i] for t in output_map_block]])
+                console.addstr(15-i, 0, row)
+            '''
+            # check for death
+            dead = character.check_coll(output_map_block)
+            character.update_y_pos()
+            if(dead):
+                break
+            # draw screen
+            out_screen = character.ret_screen(output_map_block)
+            for i in range(len(out_screen) - 5, -1, -1):
+                # print(i)
+                row = ''.join(out_screen[i])
+                console.addstr(15-i, 0, row)
+            
+            console.refresh()
+            
+            step += 1
+            score += 1
+            time.sleep(delay)  
 
-        # Output map row by row
+        # Terminate curses application
         console.clear()
-        for i in range(len(output_map_block[0]) - 5, -1, -1):
-            row = "".join(["\u2588" if j==1 else " " for j in [t[i] for t in output_map_block]])
-            console.addstr(15-i, 0, row)
         console.refresh()
+
+        curses.nocbreak()
+        console.keypad(False)
+        curses.echo()
+        curses.endwin()
         
-        step += 1
-        score += 1
-        time.sleep(delay)  
+        # Endgame
+        character.score = score
+        user_record: Record = get_record_for_username(character.username)
+        # If user has no record in DB
+        if user_record.username == "":
+            add_new_record_to_db(character.username, datetime.now(), score)
+        device_highest_record: Record = get_highest_score_record_for_device()
 
-    # Terminate curses application
-    console.clear()
-    console.refresh()
+        # Display Score
+        print("\n")
+        display_text = ""
+        if user_record.score < score:
+            display_text += f"YOUR NEW HIGH SCORE: {str(score)} - - - "
+            update_score_for_username(character.username, score)
+        else:
+            display_text += f"YOUR SCORE: {str(score)} - - - YOUR HIGHEST SCORE: {user_record.score} - - - "
 
-    curses.nocbreak()
-    console.keypad(False)
-    curses.echo()
-    curses.endwin()
-    
-    # Endgame
-    character.score = score
-    user_record: Record = get_record_for_username(character.username)
-    # If user has no record in DB
-    if user_record.username == "":
-        add_new_record_to_db(character.username, datetime.now(), score)
-    device_highest_record: Record = get_highest_score_record_for_device()
-
-    # Display Score
-    print("\n")
-    display_text = ""
-    if user_record.score < score:
-        display_text += f"YOUR NEW HIGH SCORE: {str(score)} - - - "
-        update_score_for_username(character.username, score)
-    else:
-        display_text += f"YOUR SCORE: {str(score)} YOUR HIGHEST SCORE: {user_record.score} - - - "
-
-    if device_highest_record.score >= score:
-        display_text += f"HIGHEST SCORE ON DEVICE: {str(device_highest_record.score)} BY {device_highest_record.username} ON {device_highest_record.date}"
-    else: 
-        display_text += f"NEW HIGHEST SCORE ON DEVICE: {str(character.score)} by {character.username} on {character.date_created}"
-    print(display_text)
+        if device_highest_record.score >= score:
+            display_text += f"HIGHEST SCORE ON DEVICE: {str(device_highest_record.score)} BY {device_highest_record.username} ON {device_highest_record.date}"
+        else: 
+            display_text += f"NEW HIGHEST SCORE ON DEVICE: {str(character.score)} by {character.username} on {character.date_created}"
+        print(display_text)
+        replay = input("Enter Y to play again: ")
+        if (replay.lower()!='y'):
+            break
 
 start_game()
