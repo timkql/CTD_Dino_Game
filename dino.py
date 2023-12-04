@@ -3,7 +3,6 @@ from datetime import datetime
 import random
 import time
 import curses
-import os
 
 JUMP_SPEED = 0.75
 FALL_SPEED = -0.6

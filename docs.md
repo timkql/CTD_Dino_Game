@@ -9,7 +9,6 @@ from datetime import datetime
 import random
 import time
 import curses
-import os
 ```
 ### Constant parameters for game
 ```py
