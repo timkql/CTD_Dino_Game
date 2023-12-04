@@ -107,6 +107,12 @@ class Character:
         self.date_created = datetime.now()
         self.sprite_list = [list(a) for a in self.sprite.split('\n')[1::]][::-1]
         return
+    
+    def reset(self):
+        self.y_pos = 0
+        self.y_vel = 0
+        
+        
     def jump(self):
         """Starts a jump by setting vertical velocity"""
         if(self.y_vel!=0 or self.y_pos !=0):    #Check if already jumping
@@ -284,6 +290,7 @@ def start_game():
             display_text += f"NEW HIGHEST SCORE ON DEVICE: {str(character.score)} by {character.username} on {character.date_created}"
         print(display_text)
         replay = input("Enter Y to play again: ")
+        character.reset()
         if (replay.lower()!='y'):
             break
 
