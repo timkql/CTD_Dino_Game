@@ -338,7 +338,7 @@ Calls the ```check_coll``` method to see if the player has died.
                 break
 ```
 ### Draw output
-Generates map output using ```Character.ret_screen``` method and outputs game sprite and map in terminal
+Generates map output using ```Character.ret_screen()``` method and outputs game sprite and map in terminal
 ```py
             # draw screen
             out_screen = character.ret_screen(output_map_block)
@@ -404,6 +404,7 @@ Displayed after character death for player to restart and play game again if des
             break
 ```
 ## Call main game 
+Runs the main game program
 ```py
 start_game()
 
