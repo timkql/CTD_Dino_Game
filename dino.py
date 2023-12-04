@@ -37,7 +37,7 @@ def add_new_record_to_db(username: str, date: datetime, score: int):
     con.close()
     
 def get_record_for_username(username: str):
-    """Get score for username"""
+    """Get record for username"""
 
     con = sqlite3.connect("dino.db")
     cur = con.cursor()
@@ -57,12 +57,13 @@ def update_score_for_username(username: str, score: int):
     con = sqlite3.connect("dino.db")
     cur = con.cursor()
     cur.execute(f"UPDATE score_history SET score={score} WHERE username='{username}'")
+    cur.execute(f"UPDATE score_history SET date={datetime.now()} WHERE username='{username}'")
     con.commit()
     cur.close()
     con.close()
     
 def get_highest_score_record_for_device():
-    """Get data for highest score on device"""
+    """Get record for highest score on device"""
 
     con = sqlite3.connect("dino.db")
     cur = con.cursor()
