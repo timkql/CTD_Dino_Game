@@ -40,7 +40,7 @@ def setup_database():
     con.close()
 ```
 ### Add record
-Adds a new record into the score_history table
+Adds a new record into the ```score_history`````` table
 ```py
 def add_new_record_to_db(username: str, date: datetime, score: int):
     """Add player score data to database"""
@@ -54,7 +54,7 @@ def add_new_record_to_db(username: str, date: datetime, score: int):
     con.close()
 ```
 ### Get record
-Gets a record in score_history table for a username
+Gets a record from the ```score_history``` table for a username
 ```py
 def get_record_for_username(username: str):
     """Get record for username"""
@@ -71,7 +71,7 @@ def get_record_for_username(username: str):
         return Record("", "", 0)
 ```
 ### Update score
-Updates a record's score column for a username
+Updates a ```score_history``` table record's score column for a username
 ```py
 def update_score_for_username(username: str, score: int):
     """Update a row's score and score date by username"""
@@ -86,7 +86,7 @@ def update_score_for_username(username: str, score: int):
     con.close()
 ```
 ### Get device highscore
-Retrieves record for highest score column value from the score_history table
+Retrieves record for highest score column value from the ```score_history`` table
 ```py
     
 def get_highest_score_record_for_device():
@@ -105,7 +105,7 @@ def get_highest_score_record_for_device():
     
 ```
 ## Record class
-A score_history table record class
+A ```score_history`` table record class
 ```py
 # Class Definitions
 class Record:
@@ -115,7 +115,7 @@ class Record:
     score: int
 ```
 ### Record constructor
-Record instance is initilized with a username, date of highest score and highest score inputs
+```Record``` instance is initilized with username, date of highest score and highest score inputs
 ```py
     def __init__(self, username, date, score):
         self.username = username
@@ -142,7 +142,7 @@ class Character:
     sprite_list = []
 ```
 ### Character constructor
-Character instance is initialized with a username input
+```Character``` instance is initialized with a username input
 ```py
     def __init__(self, username):
         self.username = username
