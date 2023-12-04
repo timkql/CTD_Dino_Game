@@ -40,7 +40,7 @@ def setup_database():
     con.close()
 ```
 ### Add record
-Adds a new record into the ```score_history`````` table
+Adds a new record into the ```score_history``` table
 ```py
 def add_new_record_to_db(username: str, date: datetime, score: int):
     """Add player score data to database"""
@@ -338,6 +338,7 @@ Calls the ```check_coll``` method to see if the player has died.
                 break
 ```
 ### Draw output
+Generates map output using ```Character.ret_screen``` method and outputs game sprite and map in terminal
 ```py
             # draw screen
             out_screen = character.ret_screen(output_map_block)
@@ -353,6 +354,7 @@ Calls the ```check_coll``` method to see if the player has died.
             time.sleep(delay)  
 ```
 ### Close console after character death
+Terminates curses application and calls ```curses.endwin()``` method to revert terminal to original state after character death
 ```py
         # Terminate curses application
         console.clear()
@@ -362,7 +364,11 @@ Calls the ```check_coll``` method to see if the player has died.
         console.keypad(False)
         curses.echo()
         curses.endwin()
-        
+
+```
+### Score display
+Retrieves highest score of player with ```get_record_for_username()``` and device with ```get_highest_score_record_for_device()```. Creates record of player if username does not exist in ```score_history``` table
+```py
         # Endgame
         character.score = score
         user_record: Record = get_record_for_username(character.username)
@@ -372,6 +378,7 @@ Calls the ```check_coll``` method to see if the player has died.
         device_highest_record: Record = get_highest_score_record_for_device()
 ```
 ### Score display
+Display player's score, high score, and highest score data on device after character death
 ```py
         # Display Score
         print("\n")
@@ -389,6 +396,7 @@ Calls the ```check_coll``` method to see if the player has died.
         print(display_text)
 ```
 ### Restart game if required
+Displayed after character death for player to restart and play game again if desired
 ```py
         replay = input("Enter Y to play again: ")
         character.reset()
