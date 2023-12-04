@@ -23,6 +23,8 @@ LEFT_OFFSET = 5
 ```
 ## High score database 
 ### Setup
+
+Check's if ```score_history``` table exists in the SQLite database, if not create the score_history table.
 ```py
 # Database Functions
 def setup_database():
@@ -38,6 +40,7 @@ def setup_database():
     con.close()
 ```
 ### Add record
+Adds a new record into the score_history table
 ```py
 def add_new_record_to_db(username: str, date: datetime, score: int):
     """Add player score data to database"""
@@ -51,9 +54,10 @@ def add_new_record_to_db(username: str, date: datetime, score: int):
     con.close()
 ```
 ### Get record
+Gets a record in score_history table for a username
 ```py
 def get_record_for_username(username: str):
-    """Get score for username"""
+    """Get record for username"""
 
     con = sqlite3.connect("dino.db")
     cur = con.cursor()
@@ -67,23 +71,26 @@ def get_record_for_username(username: str):
         return Record("", "", 0)
 ```
 ### Update score
+Updates a record's score column for a username
 ```py
-    
 def update_score_for_username(username: str, score: int):
-    """Update a row's score by username"""
+    """Update a row's score and score date by username"""
 
     con = sqlite3.connect("dino.db")
     cur = con.cursor()
     cur.execute(f"UPDATE score_history SET score={score} WHERE username='{username}'")
+    cur.execute(f"UPDATE score_history SET date={datetime.now()} WHERE username='{username}'")
+    con.commit()
     con.commit()
     cur.close()
     con.close()
 ```
 ### Get device highscore
+Retrieves record for highest score column value from the score_history table
 ```py
     
 def get_highest_score_record_for_device():
-    """Get data for highest score on device"""
+    """Retrieves record for highest score on device"""
 
     con = sqlite3.connect("dino.db")
     cur = con.cursor()
@@ -98,6 +105,7 @@ def get_highest_score_record_for_device():
     
 ```
 ## Record class
+A score_history table record class
 ```py
 # Class Definitions
 class Record:
@@ -107,6 +115,7 @@ class Record:
     score: int
 ```
 ### Record constructor
+Record instance is initilized with a username, date of highest score and highest score inputs
 ```py
     def __init__(self, username, date, score):
         self.username = username
@@ -114,6 +123,7 @@ class Record:
         self.score = score
 ```
 ## Character class
+A character class containing score, username, game sprite, and in-game attributes.
 ```py
 class Character:
     """Character Class"""
@@ -132,6 +142,7 @@ class Character:
     sprite_list = []
 ```
 ### Character constructor
+Character instance is initialized with a username input
 ```py
     def __init__(self, username):
         self.username = username
