@@ -5,8 +5,8 @@ import time
 import curses
 import os
 
-JUMP_SPEED = 0.5
-FALL_SPEED = -0.4
+JUMP_SPEED = 0.75
+FALL_SPEED = -0.6
 JUMP_HEIGHT = 8
 MAP_HEIGHT = 20
 MAP_WIDTH = 200
