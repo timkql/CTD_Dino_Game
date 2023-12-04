@@ -86,7 +86,7 @@ def update_score_for_username(username: str, score: int):
     con.close()
 ```
 ### Get device highscore
-Retrieves record for highest score column value from the ```score_history`` table
+Retrieves record for highest score column value from the ```score_history``` table
 ```py
     
 def get_highest_score_record_for_device():
@@ -105,7 +105,7 @@ def get_highest_score_record_for_device():
     
 ```
 ## Record class
-A ```score_history`` table record class
+A ```score_history``` table record class
 ```py
 # Class Definitions
 class Record:
@@ -150,14 +150,16 @@ class Character:
         self.sprite_list = [list(a) for a in self.sprite.split('\n')[1::]][::-1]
         return
 ```
-
+### Reset function
+Resets the velocity and position of the ```Character``` instance
 ```py
     def reset(self):
         self.y_pos = 0
         self.y_vel = 0
         
 ```
-
+### Reset function
+Starts a jump action if the sprite is not already jumping. Sets the vertical velocity to a positive value.
 ```py
     def jump(self):
         """Starts a jump by setting vertical velocity"""
@@ -166,7 +168,8 @@ class Character:
         self.y_vel = JUMP_SPEED
         return
 ```
-
+### Update position function
+Finds the next value for the y-position based on the current y-velocity. Flips the y-velocity once maximum y-position has been reached.
 ```py
     def update_y_pos(self):
         """Performs physics calculations to find the new vertical position of the sprite"""
@@ -181,7 +184,8 @@ class Character:
                     
         return
 ```
-
+### Collision detection function
+Slices part of the map to check if any part of the sprite is intersecting a map obstacle. Iterate through the sliced portion to check for intersections.
 ```py
     def check_coll(self, cur_map_block):
         """References the bottom left of the sprite, slices rectangle of size of sprite and check collision"""
@@ -193,7 +197,8 @@ class Character:
                    return True # collided with object
         return False
 ```
-
+### Character list function
+Returns a 2D list of characters to be displayed. Replaces all characters taken up by the sprite after creating a 2D list for the map characters.
 ```py
     def ret_screen(self, cur_map_block):
         """Returns a 2D List of text characters to be rendered on-screen"""
@@ -224,6 +229,7 @@ def generate_map_block(width):
     map_block = []
 ```
 ### Predefined map objects
+Define various obstacles as 2d lists of 0 and 1 values. 1 means an obstacle is pre
 ```py
     # Predefined map objects (with front and back spacing)
     cactus_small = [[0 for i in range(HEIGHT)] for j in range(30)]+[[0 if i>2 else 1 for i in range(HEIGHT)] for j in range(4)]
@@ -233,6 +239,7 @@ def generate_map_block(width):
     obstacles  = [cactus_small,cactus_tall,cactus_wide,bird]
 ```
 ### Map generation loop
+Extend the map block with new map objects. If a new map object would cause the block to hit maximum length, pad the right of the block with empty space instead.
 ```py
     # Randomly add map objects until the map width is reached
     while(True):
@@ -252,6 +259,7 @@ def generate_map_block(width):
     
 ```
 ### Player setup
+Prompts player to enter their username and initializes a new ```Character``` object with it.
 ```py
 
 def player_setup():
@@ -262,6 +270,8 @@ def player_setup():
 
 ```
 ## Main game function
+### Game start
+Set up the highscore database, then call ```player_setup()``` to instantiate the ```Character``` for the game
 ```py
 def start_game():
     """Game Engine that handles game operation, score calculation, player death"""
@@ -271,6 +281,7 @@ def start_game():
     playing = True
 ```
 ### Main loop
+Repeats the maingame as long as the player has not exited. Initializes display area and display with ```curses```
 ```py
     while playing:
         # Start curses application
@@ -286,6 +297,7 @@ def start_game():
 ```
 ## Loop for game events
 ### Get keyboard input
+Checks the character being input and react accordingly. Space bar causes the character to jump and pressing k exits the game.
 ```py
         while True:
             keyPress = console.getch()
@@ -296,6 +308,7 @@ def start_game():
                 break
 ```
 ### Generate map if required
+Creates more map when the width of the map has been traversed and extends the map. Deletes the portions of the map that are passed.
 ```py
             # Generate next map block
             if(step == MAP_WIDTH):
@@ -316,6 +329,7 @@ def start_game():
             '''
 ```
 ### Check for collision
+Calls the ```check_coll``` method to see if the player has died. 
 ```py
             # check for death
             dead = character.check_coll(output_map_block)
